@@ -64,26 +64,4 @@ public class AeroDocLeadsAcceptedFragments extends Fragment {
         ArrayAdapter<Lead> adapter = new ArrayAdapter<Lead>(activity, simple_list_item_1, new ArrayList<Lead>(leads));
         listView.setAdapter(adapter);
     }
-
-    private void updateStatus(String status) {
-        final ProgressDialog dialog = activity.showProgressDialog(getString(R.string.updating_status));
-
-        SaleAgent saleAgent = application.getSaleAgent();
-        saleAgent.setStatus(status);
-
-        Pipe<SaleAgent> pipe = application.getSaleAgentPipe(this);
-        pipe.save(saleAgent, new Callback<SaleAgent>() {
-            @Override
-            public void onSuccess(SaleAgent data) {
-                dialog.dismiss();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                activity.displayErrorMessage(e);
-                dialog.dismiss();
-            }
-        });
-    }
-
 }
