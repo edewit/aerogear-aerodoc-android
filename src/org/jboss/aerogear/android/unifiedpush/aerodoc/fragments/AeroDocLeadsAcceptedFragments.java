@@ -16,7 +16,6 @@
  */
 package org.jboss.aerogear.android.unifiedpush.aerodoc.fragments;
 
-import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -24,13 +23,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import org.jboss.aerogear.android.Callback;
-import org.jboss.aerogear.android.pipeline.Pipe;
 import org.jboss.aerogear.android.unifiedpush.aerodoc.AeroDocApplication;
 import org.jboss.aerogear.android.unifiedpush.aerodoc.R;
 import org.jboss.aerogear.android.unifiedpush.aerodoc.activities.AeroDocActivity;
 import org.jboss.aerogear.android.unifiedpush.aerodoc.model.Lead;
-import org.jboss.aerogear.android.unifiedpush.aerodoc.model.SaleAgent;
 
 import java.util.ArrayList;
 import java.util.Collection;
