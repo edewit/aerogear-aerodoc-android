@@ -19,12 +19,20 @@ package org.jboss.aerogear.android.unifiedpush.aerodoc.fragments;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import org.jboss.aerogear.android.Callback;
 import org.jboss.aerogear.android.pipeline.Pipe;
 import org.jboss.aerogear.android.unifiedpush.aerodoc.AeroDocApplication;
@@ -35,13 +43,18 @@ import org.jboss.aerogear.android.unifiedpush.aerodoc.model.SaleAgent;
 
 import java.util.List;
 
-import static android.R.layout.*;
+import static android.R.layout.simple_list_item_1;
 
 public class AeroDocLeadsAvailableFragments extends Fragment {
+    private static final String TAG = AeroDocLeadsAvailableFragments.class.getSimpleName();
 
     private AeroDocApplication application;
     private AeroDocActivity activity;
     private ListView listView;
+
+    private LocationClient locationClient;
+    private LocationRequest locationRequest;
+    private TrackLocationListener listener = new TrackLocationListener();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -81,8 +94,42 @@ public class AeroDocLeadsAvailableFragments extends Fragment {
         });
 
         retrieveLeads();
+        trackMovement();
 
         return view;
+    }
+
+    private void trackMovement() {
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(application.getApplicationContext());
+        if (ConnectionResult.SUCCESS == resultCode) {
+            locationRequest = LocationRequest.create();
+            locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+            locationRequest.setInterval(30000);
+            locationClient = new LocationClient(application, new GooglePlayServicesClient.ConnectionCallbacks() {
+                @Override
+                public void onConnected(Bundle bundle) {
+                  locationClient.requestLocationUpdates(locationRequest, listener);
+                }
+
+                @Override
+                public void onDisconnected() {
+                }
+            }, new GooglePlayServicesClient.OnConnectionFailedListener() {
+                @Override
+                public void onConnectionFailed(ConnectionResult connectionResult) {
+                    Log.e(TAG, "connection failed " + connectionResult);
+                }
+            });
+            locationClient.connect();
+        }
+    }
+
+    @Override
+    public void onStop() {
+        if (locationClient.isConnected()) {
+            locationClient.removeLocationUpdates(listener);
+        }
+        super.onStop();
     }
 
     public void retrieveLeads() {
@@ -163,4 +210,24 @@ public class AeroDocLeadsAvailableFragments extends Fragment {
         });
     }
 
+  private class TrackLocationListener implements LocationListener {
+      @Override
+      public void onLocationChanged(Location location) {
+          SaleAgent saleAgent = application.getSaleAgent();
+          saleAgent.setLongitude(location.getLongitude());
+          saleAgent.setLatitude(location.getLatitude());
+
+          Pipe<SaleAgent> pipe = application.getSaleAgentPipe(AeroDocLeadsAvailableFragments.this);
+          pipe.save(saleAgent, new Callback<SaleAgent>() {
+              @Override
+              public void onFailure(Exception e) {
+                  Log.e(TAG, "could not save sales agent", e);
+              }
+
+              @Override
+              public void onSuccess(SaleAgent data) {
+              }
+          });
+      }
+  }
 }
