@@ -17,6 +17,7 @@
 package org.jboss.aerogear.android.unifiedpush.aerodoc.fragments;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.location.Location;
@@ -26,7 +27,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Spinner;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -47,6 +51,7 @@ import static android.R.layout.simple_list_item_1;
 
 public class AeroDocLeadsAvailableFragments extends Fragment {
     private static final String TAG = AeroDocLeadsAvailableFragments.class.getSimpleName();
+    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 
     private AeroDocApplication application;
     private AeroDocActivity activity;
@@ -117,16 +122,27 @@ public class AeroDocLeadsAvailableFragments extends Fragment {
             }, new GooglePlayServicesClient.OnConnectionFailedListener() {
                 @Override
                 public void onConnectionFailed(ConnectionResult connectionResult) {
-                    Log.e(TAG, "connection failed " + connectionResult);
-                }
+                    showErrorDialog(connectionResult.getErrorCode());
+               }
             });
             locationClient.connect();
+        } else {
+            showErrorDialog(resultCode);
         }
     }
 
-    @Override
+    private void showErrorDialog(int errorCode) {
+        Dialog errorDialog = GooglePlayServicesUtil.getErrorDialog(errorCode, getActivity(), CONNECTION_FAILURE_RESOLUTION_REQUEST);
+        if (errorDialog != null) {
+            ErrorDialogFragment errorFragment = new ErrorDialogFragment();
+            errorFragment.setDialog(errorDialog);
+            errorFragment.show(getActivity().getSupportFragmentManager(), "Location Updates");
+        }
+    }
+
+  @Override
     public void onStop() {
-        if (locationClient.isConnected()) {
+        if (locationClient != null && locationClient.isConnected()) {
             locationClient.removeLocationUpdates(listener);
         }
         super.onStop();
